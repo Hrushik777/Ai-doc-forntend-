@@ -13,16 +13,29 @@ npm install
 npm run dev      # http://localhost:5173
 ```
 
-The backend must be running separately. Its `@CrossOrigin` allows only
-`localhost:5173` and `localhost:5174`, so if Vite falls back past those ports the
-app will say so explicitly rather than failing with an opaque network error.
-
-Point the app at a different backend with `VITE_BACKEND_URL` in `.env`.
+The backend must be running separately. Its `app.cors.allowed-origins` allows
+`localhost:5173`, `localhost:5174` and the deployed frontend, so if Vite falls back
+past those ports the app will say so explicitly rather than failing with an opaque
+network error.
 
 ```bash
 npm run build    # production bundle into dist/
 npm run lint     # oxlint
 ```
+
+## Which backend it talks to
+
+`VITE_BACKEND_URL` is read from Vite's env files and **inlined at build time** — changing
+it on the host after a deploy does nothing without a rebuild.
+
+| File | Used by | Points at |
+|---|---|---|
+| `.env` | `npm run dev` | `http://localhost:8080` |
+| `.env.production` | `npm run build` | the deployed Render backend |
+
+So local development keeps hitting a local backend, and the built bundle ships pointing
+at the deployed one. To override for a one-off build, set `VITE_BACKEND_URL` in the
+environment — it wins over both files.
 
 ## Backend contract
 

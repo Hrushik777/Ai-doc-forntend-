@@ -17,8 +17,15 @@ export const LIMITS = {
   maxRequestSizeLabel: "20 MB",
 };
 
-// Mirrors the backend's @CrossOrigin(origins = {...}) on DocumentController.
-const ALLOWED_ORIGINS = ["http://localhost:5173", "http://localhost:5174"];
+// Mirrors app.cors.allowed-origins in the backend's application.properties. Keep the two in
+// step: an origin missing here is diagnosed as a CORS problem even when the backend accepts it.
+const ALLOWED_ORIGINS = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  // Spelling is deliberate - the deployed service is "ai-doc-forntend", and CORS compares the
+  // origin string exactly.
+  "https://ai-doc-forntend.onrender.com",
+];
 
 /**
  * Distinguishes "backend is down" from "backend is up but rejected our origin".
@@ -53,13 +60,20 @@ async function toFriendlyError(error) {
   // Most common cause: Vite fell back past the allowed ports (5175, 5176...)
   // because earlier ones were occupied, so the backend rejects this origin.
   if (!ALLOWED_ORIGINS.includes(origin)) {
+    // The remediation differs entirely by where this is running: locally it is Vite drifting
+    // off an allowed port, deployed it is the backend's allowed-origin list.
+    const fix = origin.startsWith("http://localhost")
+      ? `Fix: stop whatever else is using those ports, then restart the dev ` +
+        `server so it starts on one of them.`
+      : `Fix: add ${origin} to app.cors.allowed-origins on the backend, or set ` +
+        `CORS_ORIGINS to a list containing it, then restart the backend.`;
+
     return new Error(
       `This page is running on ${origin}, but the backend only accepts ` +
         `${ALLOWED_ORIGINS.join(" or ")}.\n\n` +
         `That mismatch makes the browser block every response, which shows up ` +
         `as a connection failure.\n\n` +
-        `Fix: stop whatever else is using those ports, then restart the dev ` +
-        `server so it starts on one of them.`
+        fix
     );
   }
 
@@ -68,6 +82,18 @@ async function toFriendlyError(error) {
       `The server at ${BACKEND_URL} is running but refused this request.\n\n` +
         `This is usually an upload over ${LIMITS.maxRequestSizeLabel}, which the ` +
         `server drops before it can send a proper error. Try fewer or smaller files.`
+    );
+  }
+
+  // A hosted backend that is merely asleep looks identical to one that is not running, and
+  // the fix is the opposite of "go start it" - so say which situation this is.
+  if (!BACKEND_URL.includes("localhost")) {
+    return new Error(
+      `No response from ${BACKEND_URL}.\n\n` +
+        `A free-tier instance sleeps after 15 minutes idle and takes 30-60 seconds to ` +
+        `wake up, so the first request after a quiet spell can fail like this.\n\n` +
+        `Wait a moment and try again. If it keeps failing, check that the backend ` +
+        `deployed successfully.`
     );
   }
 
