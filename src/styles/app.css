@@ -1,0 +1,21 @@
+/*
+ * Single entry point for the stylesheet graph. Order matters: tokens define
+ * the variables every later sheet reads, and base sets the element defaults
+ * those sheets refine.
+ *
+ * This replaces the previous single 1331-line App.css. Each sheet below owns
+ * one area of the product and is named after it.
+ */
+
+@import "./tokens.css";
+@import "./base.css";
+@import "./ui.css";
+@import "./shell.css";
+@import "./hero.css";
+@import "./workflow.css";
+@import "./scene.css";
+@import "./upload.css";
+@import "./files.css";
+@import "./processing.css";
+@import "./results.css";
+@import "./visualizer.css";

@@ -1,0 +1,298 @@
+/*
+ * The ambient workflow scene.
+ *
+ * Every colour is applied through a class so it can read a CSS variable — an
+ * SVG presentation attribute like fill="var(--x)" does not resolve, which is
+ * exactly the trap that would leave this stuck in light-mode colours.
+ */
+
+.workflow-header {
+  position: relative;
+  margin-bottom: var(--space-6);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.workflow-header .stepper {
+  position: relative;
+  margin-bottom: 0;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* ---------------------------------------------------------------- Stage */
+
+.scene {
+  position: relative;
+  background: var(--surface-sunken);
+  transition: background-color var(--duration-slow) var(--ease-out);
+  /* Let a touch scroll the page vertically; the parallax is a pointer affordance
+     and must not swallow the gesture. */
+  touch-action: pan-y;
+}
+
+.scene__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Fades the scene into the rail below it so the two read as one surface
+   rather than a picture pasted above a widget. */
+.scene::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 30%;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--surface));
+}
+
+/* ---------------------------------------------------------------- Aurora */
+
+.scene__aurora {
+  transition: opacity var(--duration-slow) var(--ease-out);
+}
+
+/* The drifting light is the part that reads as "something is happening", so a
+   finished or failed run settles it down rather than leaving it churning. */
+.scene--done .scene__aurora {
+  opacity: 0.8;
+}
+
+.scene--failed .scene__aurora {
+  opacity: 0.45;
+}
+
+.scene__stop-accent {
+  stop-color: var(--accent);
+  stop-opacity: 0.16;
+}
+
+.scene__stop-semantic {
+  stop-color: var(--match-semantic);
+  stop-opacity: 0.14;
+}
+
+.scene__stop-fade {
+  stop-color: var(--accent);
+  stop-opacity: 0;
+}
+
+.scene--running .scene__stop-accent {
+  stop-opacity: 0.26;
+}
+
+.scene--done .scene__stop-accent {
+  stop-color: var(--success-fill);
+  stop-opacity: 0.22;
+}
+
+.scene--done .scene__stop-semantic {
+  stop-color: var(--success-fill);
+  stop-opacity: 0.16;
+}
+
+.scene--failed .scene__stop-accent {
+  stop-color: var(--danger-fill);
+  stop-opacity: 0.18;
+}
+
+.scene--failed .scene__stop-semantic {
+  stop-color: var(--danger-fill);
+  stop-opacity: 0.1;
+}
+
+/* A failed run drains the colour out instead of carrying on as though
+   something were still flowing. */
+.scene--failed .scene__doc,
+.scene--failed .scene__sheet {
+  opacity: 0.55;
+}
+
+/* ---------------------------------------------------------------- Document */
+
+.scene__doc-page {
+  fill: var(--surface);
+}
+
+/* Drawn last, over the clipped contents, so the page keeps a crisp border that
+   the letterhead and the scan sweep cannot paint across. */
+.scene__doc-edge,
+.scene__sheet-edge {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 1.5;
+}
+
+.scene__doc-stack {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1.5;
+  opacity: 0.5;
+}
+
+.scene__doc-title {
+  fill: var(--text-strong);
+  opacity: 0.85;
+}
+
+.scene__doc-sub {
+  fill: var(--text-subtle);
+  opacity: 0.7;
+}
+
+.scene__doc-logo {
+  fill: var(--accent);
+  opacity: 0.18;
+}
+
+.scene__doc-rule {
+  fill: var(--border-strong);
+  opacity: 0.6;
+}
+
+.scene__doc-label {
+  fill: var(--text-subtle);
+  opacity: 0.65;
+}
+
+/* The values are what gets read off the page, so they carry the match colour
+   and pulse with the stream rather than sitting inert. */
+.scene__doc-value {
+  fill: var(--match-exact-soft);
+  stroke: var(--match-exact);
+  stroke-width: 1;
+}
+
+.scene__doc-cellbar {
+  fill: var(--text-subtle);
+  opacity: 0.45;
+}
+
+.scene__scan {
+  opacity: 0.5;
+}
+
+/* ---------------------------------------------------------------- Stream */
+
+.scene__route {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 7;
+  stroke-linecap: round;
+  opacity: 0.5;
+}
+
+.scene__pill {
+  fill: var(--surface);
+  stroke: var(--match-exact);
+  stroke-width: 1.4;
+}
+
+.scene__pill-text {
+  fill: var(--match-exact);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.scene__pill-marks circle {
+  fill: var(--match-exact);
+  opacity: 0.7;
+}
+
+.scene__pill-glow {
+  fill: var(--match-semantic);
+}
+
+.scene--running .scene__pill {
+  stroke: var(--match-semantic);
+}
+
+/* ---------------------------------------------------------------- Sheet */
+
+.scene__sheet-frame {
+  fill: var(--surface);
+}
+
+.scene__sheet-headrow,
+.scene__sheet-gutter {
+  fill: var(--surface-muted);
+}
+
+.scene__sheet-letter,
+.scene__sheet-rownum {
+  fill: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.scene__grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.scene__sheet-head {
+  fill: var(--text-muted);
+  opacity: 0.7;
+}
+
+.scene__sheet-tab {
+  fill: var(--surface-muted);
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+/* Marks that a template was supplied. Absent when the columns were inferred,
+   because there is no template to indicate. */
+.scene__sheet-loaded {
+  fill: var(--success-fill);
+  opacity: 0.75;
+}
+
+.scene__cell {
+  fill: var(--border-strong);
+}
+
+.scene__cell--filled {
+  fill: var(--match-exact);
+}
+
+.scene--done .scene__cell--filled {
+  fill: var(--success-fill);
+}
+
+/* The outline a spreadsheet draws around the cell being written. */
+.scene__selection {
+  fill: none;
+  stroke: var(--match-semantic);
+  stroke-width: 2;
+}
+
+.scene--done .scene__selection {
+  stroke: var(--success-fill);
+}
+
+/* ---------------------------------------------------------------- Responsive */
+
+/*
+ * The scene is a ~3.8:1 strip, so on a narrow screen it collapses to a band too
+ * short to read. Below 560px it is dropped entirely — it is decorative, the
+ * rail carries the actual state, and the vertical space is worth more.
+ */
+@media (max-width: 560px) {
+  .scene {
+    display: none;
+  }
+
+  .workflow-header .stepper {
+    border-top: none;
+    padding: var(--space-4);
+  }
+}

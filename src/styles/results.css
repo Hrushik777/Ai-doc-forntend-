@@ -1,0 +1,245 @@
+/* Status banners, the download card, and the results screen. */
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ---------------------------------------------------------------- Banner */
+
+.banner {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.banner__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.banner__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.banner__title {
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  color: var(--text-strong);
+  letter-spacing: -0.015em;
+}
+
+.banner__text {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.banner__text .mono {
+  color: var(--text-body);
+  font-size: var(--text-xs);
+  background: var(--surface-muted);
+  border-radius: var(--radius-xs);
+  padding: 1px 4px;
+}
+
+.banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.banner__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.banner__list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-xs);
+  background: var(--surface-muted);
+  font-size: var(--text-xs);
+}
+
+.banner__list-name {
+  font-weight: var(--weight-semibold);
+  color: var(--text-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.banner__list-reason {
+  flex-shrink: 0;
+  color: var(--text-subtle);
+}
+
+.banner__dismiss {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  color: var(--text-subtle);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.banner__dismiss:hover {
+  background: var(--surface-muted);
+  color: var(--text-strong);
+}
+
+.banner--success {
+  border-color: color-mix(in srgb, var(--success-fill) 45%, var(--border));
+  background: var(--success-soft);
+}
+
+.banner--success .banner__icon {
+  background: var(--success-fill);
+  color: #ffffff;
+}
+
+.banner--partial,
+.banner--warning {
+  border-color: color-mix(in srgb, var(--warning-fill) 45%, var(--border));
+  background: var(--warning-soft);
+}
+
+.banner--partial .banner__icon,
+.banner--warning .banner__icon {
+  background: var(--warning-fill);
+  color: #ffffff;
+}
+
+.banner--error {
+  border-color: color-mix(in srgb, var(--danger-fill) 50%, var(--border));
+  background: var(--danger-soft);
+}
+
+.banner--error .banner__icon {
+  background: var(--danger-fill);
+  color: #ffffff;
+}
+
+.banner--info .banner__icon {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+}
+
+/* ---------------------------------------------------------------- Download */
+
+.download {
+  --spot-size: 380px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.download__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.download__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.download__name {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.download__meta {
+  font-size: var(--text-sm);
+  color: var(--text-subtle);
+}
+
+.download__actions {
+  flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------- Results detail */
+
+.results__files {
+  display: flex;
+  flex-direction: column;
+}
+
+.results__files-title {
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.results__files-note {
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-subtle);
+}
+
+.results__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 560px) {
+  .download {
+    flex-wrap: wrap;
+    padding: var(--space-4);
+  }
+
+  .download__actions,
+  .download__actions .btn {
+    width: 100%;
+  }
+
+  .results__actions .btn {
+    width: 100%;
+  }
+}

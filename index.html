@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="description"
+      content="Read documents into your own Excel template — fields matched to your column headers, with every match shown."
+    />
+
+    <!--
+      Applies the saved theme before first paint. Without it the page renders in
+      the system theme and then snaps to the stored one, which is a visible
+      white flash for anyone who chose dark on a light-mode machine.
+
+      Kept inline and dependency-free so it runs before the bundle loads, and
+      deliberately silent on failure: a browser with site data blocked should
+      fall through to the system preference, not break the page.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("docintel:theme");
+          if (stored === "light" || stored === "dark") {
+            document.documentElement.setAttribute("data-theme", stored);
+          }
+        } catch (error) {
+          /* no stored preference is available; the media query decides */
+        }
+      })();
+    </script>
+
+    <!--
+      Plus Jakarta Sans for UI, Fira Code for extracted values and cell data: a
+      monospace column makes differing values easy to compare down a list.
+      Instrument Serif is loaded in italic only — it sets a handful of emphasised
+      phrases and nothing else, so the roman cut would be dead weight.
+      All three degrade to the system stacks declared in styles/tokens.css.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Instrument+Serif:ital@1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>Rowan — documents into Excel</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

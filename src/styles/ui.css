@@ -1,0 +1,387 @@
+/* Shared primitives: buttons, badges, progress bars, link buttons, toggle. */
+
+/* ---------------------------------------------------------------- Icon */
+
+/* Icons sit inside flex rows next to text that can be long; without this they
+   are the first thing the browser squashes. */
+.icon {
+  flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------- Button */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+/* 44px minimum at md/lg so the touch target is met without a mobile-only rule. */
+.btn--sm {
+  min-height: 34px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.btn--md {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  font-size: var(--text-base);
+}
+
+.btn--lg {
+  min-height: 50px;
+  padding: 0 var(--space-6);
+  font-size: var(--text-md);
+}
+
+.btn--full {
+  width: 100%;
+}
+
+.btn__label {
+  /* Keeps a long label from pushing the icon out of the button instead of
+     truncating itself. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn--primary {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn--primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn--secondary {
+  background: var(--surface);
+  color: var(--text-strong);
+  border-color: var(--border-strong);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  border-color: var(--border-interactive);
+  background: var(--surface-muted);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--surface-muted);
+  color: var(--text-strong);
+}
+
+.btn--danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: transparent;
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: var(--danger);
+  color: var(--surface);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn__spinner {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  opacity: 0.85;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------------------------------------------------------------- Badge */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.badge--neutral {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.badge--accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.badge--success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.badge--warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.badge--danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* ---------------------------------------------------------------- Progress */
+
+.progress {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+}
+
+.progress--sm {
+  height: 6px;
+}
+
+.progress--md {
+  height: 9px;
+}
+
+.progress__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.progress--success .progress__fill {
+  background: var(--success-fill);
+}
+
+/* State hook: the loop element only exists in this mode, but the modifier lets
+   a container style the track differently when no percentage is available. */
+.progress--indeterminate {
+  background: var(--surface-muted);
+}
+
+/*
+ * The indeterminate loop is visibly a loop, not a bar creeping toward an end
+ * it cannot know. It travels a fixed 40% band across the track so it never
+ * implies a percentage.
+ */
+.progress__loop {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--accent) 35%,
+    var(--accent) 65%,
+    transparent
+  );
+  animation: progress-loop 1.4s var(--ease-in-out) infinite;
+}
+
+@keyframes progress-loop {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+/* Under reduced motion the loop stops travelling and simply holds, so the
+   component still reads as "busy" without any movement at all. */
+@media (prefers-reduced-motion: reduce) {
+  .progress__loop {
+    animation: none;
+    width: 100%;
+    opacity: 0.4;
+    background: var(--accent);
+  }
+}
+
+/* ---------------------------------------------------------------- Link button */
+
+.linkbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  text-underline-offset: 3px;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.linkbtn:hover:not(:disabled) {
+  color: var(--accent-hover);
+  text-decoration-color: currentColor;
+}
+
+.linkbtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------- Theme toggle */
+
+.theme-toggle {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.theme-toggle:hover {
+  color: var(--text-strong);
+  border-color: var(--border-interactive);
+}
+
+.theme-toggle__icon {
+  display: grid;
+  place-items: center;
+  grid-area: 1 / 1;
+}
+
+/* ---------------------------------------------------------------- Spotlight */
+
+/*
+ * A highlight that follows the pointer across a surface. Position comes from
+ * useSpotlight, which writes --spot-x/--spot-y straight onto the node; this
+ * only decides what the glow looks like.
+ */
+.spotlight {
+  position: relative;
+  isolation: isolate;
+}
+
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: var(--spot-on, 0);
+  transition: opacity var(--duration-base) var(--ease-out);
+  background: radial-gradient(
+    var(--spot-size, 320px) circle at var(--spot-x, 50%) var(--spot-y, 50%),
+    var(--accent-soft),
+    transparent 68%
+  );
+}
+
+/* Content has to establish its own stacking context, or the positioned glow
+   above would paint over the text instead of behind it. */
+.spotlight > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* A pointer-driven glow is meaningless without a pointer, and on a touch
+   screen it can only ever fire after a tap. */
+@media (hover: none) {
+  .spotlight::before {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------- Press feedback */
+
+/*
+ * Every control gives way slightly when pressed. It is the cheapest possible
+ * confirmation that a tap landed, and it matters most on touch, where there is
+ * no hover state to have already told the user the target was live.
+ */
+.btn:active:not(:disabled) {
+  transform: scale(0.975);
+}
+
+.btn--secondary:hover:not(:disabled),
+.btn--ghost:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.linkbtn:active:not(:disabled),
+.theme-toggle:active,
+.filerow__remove:active:not(:disabled),
+.template-card__remove:active,
+.banner__dismiss:active,
+.pageswitch button:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.theme-toggle,
+.filerow__remove,
+.template-card__remove,
+.banner__dismiss,
+.pageswitch button,
+.linkbtn {
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.theme-toggle:hover {
+  transform: translateY(-1px);
+}

@@ -1,0 +1,287 @@
+/*
+ * Design tokens — three layers, in dependency order:
+ *
+ *   1. Primitive   raw values, no meaning        (--blue-600, --space-4)
+ *   2. Semantic    role in the product           (--surface, --text-body)
+ *   3. Component   one component's local needs   (lives in that component's sheet)
+ *
+ * Components may only read layers 2 and 3. A raw hex in a component sheet is a
+ * bug: it is exactly what breaks when the theme flips, and it is how the
+ * previous stylesheet ended up with eight colours dark mode could not reach.
+ *
+ * Contrast: every --text-* tone is verified >= 4.5:1 against both --bg and
+ * --surface in its own theme. Ratios are noted where they sit near the line,
+ * so a later edit can see how much room it has.
+ */
+
+:root {
+  /* ================================================================ *
+   * Layer 1 — primitives                                             *
+   * ================================================================ */
+
+  /* Slate ramp — the neutral spine of the whole interface. */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+
+  /* Trust navy — product chrome and primary actions. */
+  --navy-600: #24466f;
+  --navy-700: #1e3a5f;
+  --navy-800: #16304f;
+
+  /* Blue — deterministic ("exact") matches. Meaningful, not decorative. */
+  --blue-300: #7fb0ff;
+  --blue-500: #3b82f6;
+  --blue-600: #2563eb;
+  --blue-800: #1e40af;
+
+  /* Violet — semantic (AI-resolved) matches. */
+  --violet-300: #c4a6ff;
+  --violet-600: #7c3aed;
+
+  /* Status ramps. Fill tones and text tones are separate on purpose: the
+     tone that reads well as a 20px chip fails as 13px body copy. */
+  --green-400: #4ade80;
+  --green-500: #22c55e;
+  --green-600: #16a34a;
+  --green-700: #15803d;
+
+  --amber-400: #fbbf24;
+  --amber-600: #d97706;
+  --amber-700: #b45309;
+
+  --red-300: #fca5a5;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+
+  /* Spacing — 4px base, standard density (UI UX Pro Max density 6/10). */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  /* Radius */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 999px;
+
+  /* Type scale */
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+  --text-3xl: 36px;
+  --text-4xl: 44px;
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.55;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+
+  /* Families. Fira Code is kept for extracted values and cell data: a
+     monospace column makes differing values comparable down a list. */
+  --font-sans: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Fira Code", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  /* Italic only, for emphasised phrases in running copy. High-contrast serif
+     against a geometric sans is the pairing that reads as editorial rather
+     than as a font someone forgot to change. */
+  --font-serif: "Instrument Serif", "Iowan Old Style", Georgia, "Times New Roman", serif;
+
+  /* Motion — "Subtle" tier. Exits run quicker than entrances, because a thing
+     leaving should never hold the user up. */
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
+  --duration-slow: 340ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --layer-sticky: 20;
+  --layer-overlay: 40;
+
+  /* ================================================================ *
+   * Layer 2 — semantic (light)                                       *
+   * ================================================================ */
+
+  color-scheme: light;
+
+  --bg: var(--slate-50);
+  --bg-veil: rgba(248, 250, 252, 0.82);
+  --surface: #ffffff;
+  --surface-muted: var(--slate-100);
+  --surface-sunken: #eef2f7;
+  --surface-raised: #ffffff;
+
+  --border: var(--slate-200);
+  --border-strong: var(--slate-300);
+  --border-interactive: var(--slate-400);
+
+  --text-strong: var(--slate-900); /* 17.9:1 */
+  --text-body: var(--slate-700); /* 10.4:1 */
+  --text-muted: var(--slate-600); /* 7.6:1 */
+  --text-subtle: var(--slate-500); /* 4.8:1 — lightest tone allowed on text */
+  --text-on-accent: #ffffff;
+
+  --accent: var(--navy-700); /* 11.3:1 behind white text */
+  --accent-hover: var(--navy-800);
+  --accent-soft: rgba(30, 58, 95, 0.08);
+  --accent-ring: var(--navy-700);
+
+  /* Match semantics. These two carry meaning in the visualizer — they are not
+     interchangeable with the accent, and both themes must keep them clearly
+     distinguishable from each other. */
+  --match-exact: var(--blue-800);
+  --match-exact-soft: rgba(30, 64, 175, 0.1);
+  --match-semantic: var(--violet-600);
+  --match-semantic-soft: rgba(124, 58, 237, 0.11);
+
+  --success: var(--green-700); /* text */
+  --success-fill: var(--green-600); /* fills only — 3.4:1, fails as text */
+  --success-soft: rgba(22, 163, 74, 0.1);
+
+  --warning: var(--amber-700);
+  --warning-fill: var(--amber-600);
+  --warning-soft: rgba(217, 119, 6, 0.12);
+
+  --danger: var(--red-700);
+  --danger-fill: var(--red-600);
+  --danger-soft: rgba(185, 28, 28, 0.09);
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 18px 40px -12px rgba(15, 23, 42, 0.16), 0 4px 10px -4px rgba(15, 23, 42, 0.06);
+}
+
+/*
+ * Dark theme.
+ *
+ * Derived from the light palette against measured contrast rather than adopted
+ * from a stock dark ramp — the product's meaning-bearing colours (exact vs.
+ * semantic match) have to stay distinguishable from each other, which a
+ * generic ramp does not guarantee.
+ *
+ * Surfaces lighten as they rise, and borders do more work than shadows,
+ * because a drop shadow is nearly invisible on a dark ground.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #0b1220;
+    --bg-veil: rgba(11, 18, 32, 0.82);
+    --surface: #111a2b;
+    --surface-muted: #172032;
+    --surface-sunken: #0e1626;
+    --surface-raised: #18233a;
+
+    --border: #1e293b;
+    --border-strong: #334155;
+    --border-interactive: #47566e;
+
+    --text-strong: #f1f5f9;
+    --text-body: #cbd5e1;
+    --text-muted: #a3b1c4;
+    --text-subtle: #8b9bb0; /* 5.1:1 on --bg */
+    --text-on-accent: #ffffff;
+
+    --accent: var(--blue-600); /* 5.2:1 behind white text */
+    --accent-hover: var(--blue-500);
+    --accent-soft: rgba(59, 130, 246, 0.16);
+    --accent-ring: var(--blue-500);
+
+    --match-exact: var(--blue-300);
+    --match-exact-soft: rgba(127, 176, 255, 0.15);
+    --match-semantic: var(--violet-300);
+    --match-semantic-soft: rgba(196, 166, 255, 0.16);
+
+    --success: var(--green-400);
+    --success-fill: var(--green-500);
+    --success-soft: rgba(74, 222, 128, 0.14);
+
+    --warning: var(--amber-400);
+    --warning-fill: var(--amber-400);
+    --warning-soft: rgba(251, 191, 36, 0.14);
+
+    --danger: var(--red-300);
+    --danger-fill: var(--red-500);
+    --danger-soft: rgba(252, 165, 165, 0.13);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 14px -2px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 20px 44px -14px rgba(0, 0, 0, 0.66);
+  }
+}
+
+/* An explicit choice must win over the system preference in both directions,
+   so the dark block is repeated for [data-theme="dark"]. Keep the two in sync:
+   a token added above and forgotten here silently falls back to light. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0b1220;
+  --bg-veil: rgba(11, 18, 32, 0.82);
+  --surface: #111a2b;
+  --surface-muted: #172032;
+  --surface-sunken: #0e1626;
+  --surface-raised: #18233a;
+
+  --border: #1e293b;
+  --border-strong: #334155;
+  --border-interactive: #47566e;
+
+  --text-strong: #f1f5f9;
+  --text-body: #cbd5e1;
+  --text-muted: #a3b1c4;
+  --text-subtle: #8b9bb0;
+  --text-on-accent: #ffffff;
+
+  --accent: var(--blue-600);
+  --accent-hover: var(--blue-500);
+  --accent-soft: rgba(59, 130, 246, 0.16);
+  --accent-ring: var(--blue-500);
+
+  --match-exact: var(--blue-300);
+  --match-exact-soft: rgba(127, 176, 255, 0.15);
+  --match-semantic: var(--violet-300);
+  --match-semantic-soft: rgba(196, 166, 255, 0.16);
+
+  --success: var(--green-400);
+  --success-fill: var(--green-500);
+  --success-soft: rgba(74, 222, 128, 0.14);
+
+  --warning: var(--amber-400);
+  --warning-fill: var(--amber-400);
+  --warning-soft: rgba(251, 191, 36, 0.14);
+
+  --danger: var(--red-300);
+  --danger-fill: var(--red-500);
+  --danger-soft: rgba(252, 165, 165, 0.13);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px -2px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 20px 44px -14px rgba(0, 0, 0, 0.66);
+}
