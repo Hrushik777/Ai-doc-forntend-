@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local environment values. .env.example is the committed template; real values for the
+# deployed build come from the host's environment variables, not from a file in the repo.
+.env

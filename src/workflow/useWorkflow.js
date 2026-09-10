@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import {
+  AuthRequiredError,
   ExplainUnavailableError,
   LIMITS,
   createDownloadUrl,
@@ -7,6 +8,7 @@ import {
   processDocumentExplained,
   processSingleDocument,
 } from "../api";
+import { SignInCancelledError, useAuth } from "../auth/auth-context";
 import { fileKey, partitionDocuments } from "../utils/files";
 import { formatBytes } from "../utils/format";
 
@@ -153,6 +155,28 @@ function reducer(state, action) {
         elapsedMs: 0,
       };
 
+    // A run stopped because the session was not accepted — it expired mid-flight,
+    // or was never valid. Returns to Setup like BACK_TO_SETUP, since the files are
+    // still perfectly good and making the user pick them again would be absurd,
+    // but keeps a message where BACK_TO_SETUP deliberately clears one.
+    //
+    // Deliberately not FAILURE: that moves to Results under "The run failed",
+    // which tells the user their document is the problem when all they need to do
+    // is sign in again.
+    case "SESSION_EXPIRED":
+      return {
+        ...state,
+        stage: "setup",
+        phase: null,
+        result: null,
+        explanation: null,
+        explainMissing: false,
+        error: action.message,
+        cancelled: false,
+        upload: { loaded: 0, total: 0 },
+        elapsedMs: 0,
+      };
+
     case "RESET":
       return { ...initialState };
 
@@ -224,6 +248,7 @@ export function deriveFileStatuses(state) {
 
 export function useWorkflow() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const { getToken, signOut } = useAuth();
   const abortRef = useRef(null);
   const urlRef = useRef(null);
 
@@ -315,6 +340,30 @@ export function useWorkflow() {
       return;
     }
 
+    // The gate. Deliberately here and not earlier: everything up to this point —
+    // reading the pitch, choosing documents, choosing a template — stays open, and
+    // the account is asked for only when work is about to be spent.
+    //
+    // A popup rather than a redirect, because state.documents holds live File
+    // handles that cannot be serialised. Navigating away and back would unmount
+    // the app and lose the user's selection, so they would return signed in and
+    // empty-handed.
+    let token;
+    try {
+      token = await getToken();
+    } catch (error) {
+      // Nothing has started yet, so stage is still "setup" and the files are
+      // untouched — the same shape as the batch-size guard above.
+      dispatch({
+        type: "SET_ERROR",
+        message:
+          error instanceof SignInCancelledError
+            ? "Processing needs a signed-in account. Your files are still here — press Process to try again."
+            : error.message || "Could not sign in.",
+      });
+      return;
+    }
+
     releaseUrl();
     dispatch({ type: "START" });
 
@@ -323,6 +372,7 @@ export function useWorkflow() {
 
     const transport = {
       signal: controller.signal,
+      token,
       onUploadProgress: ({ loaded, total }) =>
         dispatch({ type: "UPLOAD_PROGRESS", loaded, total }),
       onUploadComplete: () => dispatch({ type: "UPLOAD_DONE" }),
@@ -398,6 +448,17 @@ export function useWorkflow() {
         dispatch({ type: "CANCELLED" });
         return;
       }
+      // The session lapsed while the request was in flight, or was rejected. Not
+      // a failed run: the document was never the problem, so the user goes back
+      // to Setup with their files rather than to Results under "The run failed".
+      if (error instanceof AuthRequiredError) {
+        signOut();
+        dispatch({
+          type: "SESSION_EXPIRED",
+          message: `${error.message}\n\nYour files are still selected — press Process to sign in and run again.`,
+        });
+        return;
+      }
       dispatch({ type: "FAILURE", message: error.message || "Something went wrong." });
     }
   }, [
@@ -407,6 +468,8 @@ export function useWorkflow() {
     overRequestLimit,
     requestBytes,
     releaseUrl,
+    getToken,
+    signOut,
   ]);
 
   const fileStatuses = useMemo(() => deriveFileStatuses(state), [state]);

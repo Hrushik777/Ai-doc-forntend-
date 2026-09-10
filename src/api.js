@@ -126,6 +126,7 @@ function sendMultipart({
   formData,
   responseType = "text",
   signal,
+  token,
   onUploadProgress,
   onUploadComplete,
 }) {
@@ -138,6 +139,10 @@ function sendMultipart({
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url, true);
     xhr.responseType = responseType;
+
+    // These requests are already outside the CORS-safelist because of the upload
+    // progress listeners below, so this adds no preflight that was not happening.
+    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
     const detach = () => signal?.removeEventListener("abort", onAbort);
     const onAbort = () => xhr.abort();
@@ -199,6 +204,27 @@ async function messageFromResponse({ status, response }) {
   }
 }
 
+/**
+ * Turns a non-2xx response into the right kind of error.
+ *
+ * Shared by all three endpoints deliberately. Three copies of this check is how
+ * they drift: a new status handled in one and not the others shows up later as a
+ * failure that behaves differently depending on which button was pressed.
+ */
+async function throwForStatus(result) {
+  if (result.status >= 200 && result.status < 300) return;
+
+  const message = await messageFromResponse(result);
+
+  // Not a failed run. The user is not signed in, or their session ran out while
+  // they were choosing files, and the answer is to sign in rather than retry.
+  if (result.status === 401 || result.status === 403) {
+    throw new AuthRequiredError(message);
+  }
+
+  throw new Error(message);
+}
+
 function readIntHeader(header, name) {
   const raw = header(name);
   const value = raw === null ? NaN : Number(raw);
@@ -244,9 +270,7 @@ export async function processSingleDocument(document, template, options = {}) {
     throw await toFriendlyError(error);
   }
 
-  if (result.status < 200 || result.status >= 300) {
-    throw new Error(await messageFromResponse(result));
-  }
+  await throwForStatus(result);
 
   return { blob: result.response, filename: "processed-document.xlsx" };
 }
@@ -270,9 +294,7 @@ export async function processBatchDocuments(documents, template, options = {}) {
     throw await toFriendlyError(error);
   }
 
-  if (result.status < 200 || result.status >= 300) {
-    throw new Error(await messageFromResponse(result));
-  }
+  await throwForStatus(result);
 
   // DocumentController lists these in @CrossOrigin(exposedHeaders = {...}), so
   // they are readable here. They are still read defensively: an older backend
@@ -288,6 +310,50 @@ export async function processBatchDocuments(documents, template, options = {}) {
     successCount: readIntHeader(result.header, "x-batch-success-count"),
     failedFiles: resolveFailedFiles(result.header("x-batch-failed-files"), submittedNames),
   };
+}
+
+/**
+ * The request needs a signed-in user, and the token we sent (if any) was not
+ * accepted. Typed rather than a plain Error because the workflow has to treat it
+ * differently from a failed run: the answer is to sign in, not to try again.
+ */
+export class AuthRequiredError extends Error {
+  constructor(message) {
+    super(message || "Sign in to process documents.");
+    this.name = "AuthRequiredError";
+  }
+}
+
+/**
+ * Exchanges a Google ID token for a session of ours.
+ *
+ * Google's token is spent here and never stored: everything afterwards carries
+ * the token this returns, whose lifetime the backend chooses.
+ */
+export async function createSession(idToken) {
+  let response;
+  try {
+    response = await fetch(`${BACKEND_URL}/api/auth/session`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken }),
+    });
+  } catch (error) {
+    throw await toFriendlyError(error);
+  }
+
+  if (!response.ok) {
+    let message = `Sign-in failed (${response.status})`;
+    try {
+      const body = await response.json();
+      if (body?.message) message = body.message;
+    } catch {
+      // Non-JSON body; the status-based message stands.
+    }
+    throw new AuthRequiredError(message);
+  }
+
+  return response.json();
 }
 
 /**
@@ -327,9 +393,7 @@ export async function processDocumentExplained(document, template, options = {})
     throw new ExplainUnavailableError();
   }
 
-  if (result.status < 200 || result.status >= 300) {
-    throw new Error(await messageFromResponse(result));
-  }
+  await throwForStatus(result);
 
   let payload;
   try {

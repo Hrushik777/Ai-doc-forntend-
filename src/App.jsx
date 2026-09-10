@@ -6,6 +6,7 @@ import WorkflowHeader from "./components/WorkflowHeader";
 import PipelineExplainer from "./components/PipelineExplainer";
 import ThemeToggle from "./components/ThemeToggle";
 import TopbarStatus from "./components/TopbarStatus";
+import AccountControl from "./components/AccountControl";
 import SetupStep from "./components/steps/SetupStep";
 import ProcessingStep from "./components/steps/ProcessingStep";
 import ResultsStep from "./components/steps/ResultsStep";
@@ -70,6 +71,7 @@ export default function App() {
 
           <div className="topbar__actions">
             <TopbarStatus workflow={workflow} />
+            <AccountControl />
             <ThemeToggle />
           </div>
         </div>
