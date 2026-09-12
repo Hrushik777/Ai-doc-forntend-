@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence } from "motion/react";
 import { createSession } from "../api";
 import { AuthContext, SESSION_KEY, SignInCancelledError } from "./auth-context";
+import SignInDialog from "./SignInDialog";
 
 const GSI_SRC = "https://accounts.google.com/gsi/client";
 
@@ -50,8 +52,8 @@ function loadGoogleIdentityServices() {
         ? resolve(window.google.accounts.id)
         : reject(new Error("Google sign-in loaded but did not initialise."));
     script.onerror = () => {
-      // Let a later attempt retry rather than caching the failure forever: this
-      // is usually a blocked script or a dropped connection, not a permanent state.
+      // Let a later attempt retry rather than caching the failure forever: this is
+      // usually a blocked script or a dropped connection, not a permanent state.
       gsiPromise = null;
       reject(new Error("Could not load Google sign-in. Check your connection or any blockers."));
     };
@@ -64,16 +66,27 @@ function loadGoogleIdentityServices() {
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(readStoredSession);
 
-  // Holds the in-flight sign-in so two rapid clicks share one popup rather than
-  // opening a second that the browser would silently suppress.
+  // The dialog is open exactly while a sign-in is outstanding. Holding the
+  // promise's resolve/reject here is what lets start() await a sign-in that
+  // completes through Google's button rather than a call we control.
+  const [pending, setPending] = useState(null);
   const pendingRef = useRef(null);
 
   useEffect(() => storeSession(session), [session]);
 
+  const settle = useCallback((outcome) => {
+    const waiting = pendingRef.current;
+    pendingRef.current = null;
+    setPending(null);
+    if (!waiting) return;
+    if (outcome.error) waiting.reject(outcome.error);
+    else waiting.resolve(outcome.session);
+  }, []);
+
   const signOut = useCallback(() => {
     setSession(null);
-    // Google's own record of the last account is separate from ours; clearing it
-    // means the next sign-in asks which account rather than assuming the old one.
+    // Google's record of the last account is separate from ours; clearing it means
+    // the next sign-in asks which account rather than assuming the previous one.
     try {
       window.google?.accounts?.id?.disableAutoSelect();
     } catch {
@@ -82,7 +95,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signIn = useCallback(async () => {
-    if (pendingRef.current) return pendingRef.current;
+    // A second press while the dialog is open joins the first attempt instead of
+    // opening a second dialog over it.
+    if (pendingRef.current) return pendingRef.current.promise;
 
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (!clientId) {
@@ -92,43 +107,38 @@ export function AuthProvider({ children }) {
       );
     }
 
-    const attempt = (async () => {
-      const googleId = await loadGoogleIdentityServices();
+    const googleId = await loadGoogleIdentityServices();
 
-      const idToken = await new Promise((resolve, reject) => {
-        googleId.initialize({
-          client_id: clientId,
-          callback: (response) =>
-            response?.credential
-              ? resolve(response.credential)
-              : reject(new SignInCancelledError()),
-        });
+    let resolve;
+    let reject;
+    const promise = new Promise((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    pendingRef.current = { promise, resolve, reject };
 
-        // requestAccessToken-style popup rather than One Tap: One Tap can be
-        // suppressed entirely by browser settings or a previous dismissal, and a
-        // sign-in the user explicitly asked for must not silently do nothing.
-        googleId.prompt((notification) => {
-          if (notification?.isNotDisplayed?.() || notification?.isSkippedMoment?.()) {
-            reject(new SignInCancelledError());
-          }
-        });
-      });
+    googleId.initialize({
+      client_id: clientId,
+      callback: async (response) => {
+        if (!response?.credential) {
+          settle({ error: new SignInCancelledError() });
+          return;
+        }
+        try {
+          // Google's token is spent here and never stored: the backend verifies it
+          // once and returns a session of its own, which every later request carries.
+          const issued = await createSession(response.credential);
+          setSession(issued);
+          settle({ session: issued });
+        } catch (error) {
+          settle({ error });
+        }
+      },
+    });
 
-      // Google's token is spent here and never stored: the backend verifies it
-      // once and returns a session of its own, which is what every later request
-      // carries.
-      const issued = await createSession(idToken);
-      setSession(issued);
-      return issued;
-    })();
-
-    pendingRef.current = attempt;
-    try {
-      return await attempt;
-    } finally {
-      pendingRef.current = null;
-    }
-  }, []);
+    setPending({ googleId, clientId });
+    return promise;
+  }, [settle]);
 
   /**
    * The token to send with a request, refreshing first if it is close enough to
@@ -143,6 +153,11 @@ export function AuthProvider({ children }) {
     return (await signIn()).token;
   }, [session, signIn]);
 
+  const cancelSignIn = useCallback(
+    () => settle({ error: new SignInCancelledError() }),
+    [settle]
+  );
+
   const value = useMemo(
     () => ({
       user: session ? { email: session.email, name: session.name } : null,
@@ -154,5 +169,19 @@ export function AuthProvider({ children }) {
     [session, getToken, signIn, signOut]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <AnimatePresence>
+        {pending ? (
+          <SignInDialog
+            key="signin"
+            googleId={pending.googleId}
+            clientId={pending.clientId}
+            onCancel={cancelSignIn}
+          />
+        ) : null}
+      </AnimatePresence>
+    </AuthContext.Provider>
+  );
 }
